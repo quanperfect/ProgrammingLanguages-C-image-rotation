@@ -2,7 +2,7 @@
 #include <errno.h>
 
 enum open_status file_open(FILE** file, const char* name, const char* mode) {
-    *file = fopen(path, user_rights);
+    *file = fopen(name, mode);
     if (*file) {
         return OPEN_SUCCESS;
     } else if (errno == ENOENT){
