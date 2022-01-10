@@ -89,7 +89,7 @@ void pre_check(int argc, char* argv[]) {
     }
 }
 
-void get_result_in_file(int argc, char* argv[]) {
+void get_result_in_file(char* argv[]) {
 		
 		open_status = file_open(&file, argv[2], "wb");
     
@@ -120,7 +120,7 @@ int main(int argc, char* argv[]) {
  
     result_image = rotate(source_image);
 
-		get_result_in_file(argc, argv);
+		get_result_in_file(argv);
 
 		printf(GRN "The rotation was completed successfully." RESET "\nCheck the new created file with the name you assigned above.\n");
     return 0;
