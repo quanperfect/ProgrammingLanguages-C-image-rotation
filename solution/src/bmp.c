@@ -2,6 +2,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+static const uint16_t BMP_TYPE = 0x4D42;
+
 #pragma pack(push, 1)
 struct bmp_header {
     uint16_t bfSignature;
@@ -22,35 +24,40 @@ struct bmp_header {
 };
 #pragma pack(pop)
 
-static uint8_t create_padding(uint32_t width) {
+static uint8_t calculate_padding(uint32_t width) {
     return (width % 4 == 0) ? 0 : (4 - (width * sizeof(struct pixel)) % 4);
 }
 
 static bool check_signature(const struct bmp_header* header) {
-    unsigned char b_byte, m_byte;
-    b_byte = header->bfSignature & 0xFF;
-    m_byte = (header->bfSignature >> 8) & 0xFF;
-    if (b_byte == 'B' && m_byte == 'M') {
-        return true;
-    }
+    if (header->bfSignature == BMP_TYPE) {
+			return true;
+		}
     return false;
 }
 
 enum bmp_status from_bmp(FILE* file, struct image* const img) {
     struct bmp_header header;
     size_t result = fread(&header, sizeof(struct bmp_header), 1, file);
-    if (result != 1) return BMP_ERROR;
+    if (result != 1) {
+			return BMP_ERROR;
+		}
 
-    if (!check_signature(&header)) return BMP_INVALID_HEADER;
+    if (!check_signature(&header)) {
+			return BMP_INVALID_HEADER;
+		}
 
     *img = create_image(header.biWidth, header.biHeight);
     for (uint32_t y = 0; y < img->height; y++) {
         size_t result = fread(find_pixel_in_image(0, y, img), sizeof(struct pixel), img->width, file);
         
-        if (result != img->width) return BMP_ERROR;
+        if (result != img->width) {
+					return BMP_ERROR;
+				}
 
-        result = fseek(file, create_padding(img->width), SEEK_CUR);
-        if (result != 0) return BMP_ERROR;
+        result = fseek(file, calculate_padding(img->width), SEEK_CUR);
+        if (result != 0) {
+					return BMP_ERROR;
+				}
     }
 
     return BMP_SUCCESS;
@@ -59,10 +66,10 @@ enum bmp_status from_bmp(FILE* file, struct image* const img) {
 struct bmp_header create_header(uint32_t width, uint32_t height) {
     const uint32_t HEADER_SIZE = 40;
     const uint32_t OFF_BITS_HEADER_SIZE = 14 + HEADER_SIZE;
-    const uint32_t IMAGE_SIZE = (sizeof(struct pixel) * width + create_padding(width)) * height;
+    const uint32_t IMAGE_SIZE = (sizeof(struct pixel) * width + calculate_padding(width)) * height;
     const uint32_t FILE_SIZE = OFF_BITS_HEADER_SIZE + IMAGE_SIZE;
     return (struct bmp_header) {
-            .bfSignature = ('M' << 8) + 'B',
+            .bfSignature = BMP_TYPE,
             .bfileSize = FILE_SIZE,
             .bfReserved = 0,
             .bOffBits = OFF_BITS_HEADER_SIZE,
@@ -90,7 +97,7 @@ enum bmp_status to_bmp(FILE* file, struct image const img) {
         size_t result = fwrite(find_pixel_in_image(0, y, &img), sizeof(struct pixel), img.width, file);
         if (result != img.width) return BMP_ERROR;
 
-        for (int i = 0; i < create_padding(img.width); i++) {
+        for (int i = 0; i < calculate_padding(img.width); i++) {
             result = putc(0, file);
             if (result == EOF) return BMP_ERROR;
         }

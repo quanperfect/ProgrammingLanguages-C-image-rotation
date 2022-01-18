@@ -10,7 +10,5 @@ struct image create_image(uint64_t width, uint64_t height) {
 }
 
 void destroy_image(struct image* const img) {
-    img->width = 0;
-    img->height = 0;
     if (img->data != NULL) free(img->data);
 }
